@@ -8,11 +8,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const response = await fetch(`https://api.mpcfill.com/cards?name=${encodeURIComponent(name as string)}`);
-    const data = await response.json();
+    const searchName = (name as string).replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+    
+    const response = await fetch(`https://api.mpcfill.com/cards?name=${encodeURIComponent(searchName)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; LeylineCardLab/1.0)',
+      }
+    });
 
-    return res.status(200).json(data);
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to fetch MPC arts' });
+    if (!response.ok) {
+      throw new Error(`MPC API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    return res.status(200).json(data || []);
+
+  } catch (error: any) {
+    console.error("MPC Backend Error:", error.message);
+    return res.status(500).json({ error: "Failed to fetch from MPC" });
   }
 }
